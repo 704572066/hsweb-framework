@@ -17,7 +17,8 @@ import java.util.concurrent.TimeUnit;
 @Setter
 public class DefaultUserTokenGenPar implements ReactiveUserTokenGenerator, ReactiveUserTokenParser {
 
-    private long timeout = TimeUnit.MINUTES.toMillis(30);
+    //有效期1年
+    private long timeout = TimeUnit.MINUTES.toMillis(525600);
 
     @SuppressWarnings("all")
     private String headerName = "X-Access-Token";

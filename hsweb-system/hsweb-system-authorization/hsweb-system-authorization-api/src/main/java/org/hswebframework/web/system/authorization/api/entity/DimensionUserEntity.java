@@ -81,6 +81,11 @@ public class DimensionUserEntity extends GenericEntity<String> {
     @Schema(description = "关联时间", accessMode = Schema.AccessMode.READ_ONLY)
     private Long relationTime;
 
+    @Column(name = "cid")
+    @Comment("app设备cid")
+    @Schema(description = "设备cid")
+    private String cid;
+
     public void generateId() {
         if (StringUtils.isEmpty(getId())) {
             String id = DigestUtils

@@ -62,7 +62,7 @@ public interface ReactiveUserService {
      * @param plainPassword 明文密码
      * @return 用户实体
      */
-    Mono<UserEntity> findByUsernameAndPassword(String username, String plainPassword);
+    Mono<UserEntity> findByUsernameAndPassword(String username, String plainPassword, String cid);
 
     /**
      * 修改用户状态

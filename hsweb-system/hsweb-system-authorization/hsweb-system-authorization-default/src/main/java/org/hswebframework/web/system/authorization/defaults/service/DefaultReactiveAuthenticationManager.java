@@ -23,6 +23,9 @@ public class DefaultReactiveAuthenticationManager implements ReactiveAuthenticat
     private ReactiveUserService reactiveUserService;
 
     @Autowired
+    private DefaultDimensionService defaultDimensionService;
+
+    @Autowired
     private ReactiveAuthenticationInitializeService initializeService;
 
     @Autowired(required = false)
@@ -59,7 +62,7 @@ public class DefaultReactiveAuthenticationManager implements ReactiveAuthenticat
         return request
                 .filter(PlainTextUsernamePasswordAuthenticationRequest.class::isInstance)
                 .map(PlainTextUsernamePasswordAuthenticationRequest.class::cast)
-                .flatMap(pwdRequest -> reactiveUserService.findByUsernameAndPassword(pwdRequest.getUsername(), pwdRequest.getPassword()))
+                .flatMap(pwdRequest -> reactiveUserService.findByUsernameAndPassword(pwdRequest.getUsername(), pwdRequest.getPassword(), pwdRequest.getCid()))
                 .filter(user -> Byte.valueOf((byte) 1).equals(user.getStatus()))
                 .map(UserEntity::getId)
                 .flatMap(this::getByUserId);

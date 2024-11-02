@@ -37,7 +37,7 @@ public class AuthorizationFailedEvent extends AbstractAuthorizationEvent {
     public AuthorizationFailedEvent(String username,
                                     String password,
                                     Function<String, Object> parameterGetter) {
-        super(username, password, parameterGetter);
+        super(username, password, "", parameterGetter);
     }
 
     public Throwable getException() {

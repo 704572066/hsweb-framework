@@ -37,6 +37,8 @@ public abstract class AbstractAuthorizationEvent extends DefaultAsyncEvent imple
 
     protected String password;
 
+    protected String cid;
+
     private final transient Function<String, Object> parameterGetter;
 
     /**
@@ -46,12 +48,13 @@ public abstract class AbstractAuthorizationEvent extends DefaultAsyncEvent imple
      * @param password        密码
      * @param parameterGetter 参数获取函数,用户获取授权时传入的参数
      */
-    public AbstractAuthorizationEvent(String username, String password, Function<String, Object> parameterGetter) {
+    public AbstractAuthorizationEvent(String username, String password, String cid, Function<String, Object> parameterGetter) {
         if (username == null || password == null || parameterGetter == null) {
             throw new NullPointerException();
         }
         this.username = username;
         this.password = password;
+        this.cid = cid;
         this.parameterGetter = parameterGetter;
     }
 
@@ -66,5 +69,9 @@ public abstract class AbstractAuthorizationEvent extends DefaultAsyncEvent imple
 
     public String getPassword() {
         return password;
+    }
+
+    public String getCid() {
+        return cid;
     }
 }

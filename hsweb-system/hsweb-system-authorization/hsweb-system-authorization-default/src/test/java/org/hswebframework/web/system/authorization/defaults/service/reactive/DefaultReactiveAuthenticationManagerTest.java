@@ -80,7 +80,7 @@ public class DefaultReactiveAuthenticationManagerTest {
                 .verifyComplete();
 
         Mono<Authentication> authenticationMono = reactiveAuthenticationManager
-                .authenticate(Mono.just(new PlainTextUsernamePasswordAuthenticationRequest("admin", "admin")))
+                .authenticate(Mono.just(new PlainTextUsernamePasswordAuthenticationRequest("admin", "admin","123")))
                 .cache();
 
         authenticationMono.map(Authentication::getUser)

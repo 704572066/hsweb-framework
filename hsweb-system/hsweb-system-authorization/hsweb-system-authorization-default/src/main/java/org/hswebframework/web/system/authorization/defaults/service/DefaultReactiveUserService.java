@@ -14,6 +14,7 @@ import org.hswebframework.web.id.IDGenerator;
 import org.hswebframework.web.system.authorization.api.PasswordEncoder;
 import org.hswebframework.web.system.authorization.api.PasswordValidator;
 import org.hswebframework.web.system.authorization.api.UsernameValidator;
+import org.hswebframework.web.system.authorization.api.entity.DimensionUserEntity;
 import org.hswebframework.web.system.authorization.api.entity.UserEntity;
 import org.hswebframework.web.system.authorization.api.event.*;
 import org.hswebframework.web.system.authorization.api.service.reactive.ReactiveUserService;
@@ -33,6 +34,10 @@ public class DefaultReactiveUserService extends GenericReactiveCrudService<UserE
 
     @Autowired
     private ReactiveRepository<UserEntity, String> repository;
+
+    @Autowired
+    private ReactiveRepository<DimensionUserEntity, String> dimensionUserRepository;
+
 
     @Autowired(required = false)
     private PasswordEncoder passwordEncoder = (password, salt) -> DigestUtils.md5Hex(String.format("hsweb.%s.framework.%s", password, salt));
@@ -150,8 +155,8 @@ public class DefaultReactiveUserService extends GenericReactiveCrudService<UserE
     }
 
     @Override
-    @Transactional(readOnly = true, transactionManager = TransactionManagers.reactiveTransactionManager)
-    public Mono<UserEntity> findByUsernameAndPassword(String username, String plainPassword) {
+    @Transactional(transactionManager = TransactionManagers.reactiveTransactionManager)
+    public Mono<UserEntity> findByUsernameAndPassword(String username, String plainPassword, String cid) {
         return Mono.justOrEmpty(username)
                    .flatMap(_name -> repository
                            .createQuery()
@@ -159,7 +164,25 @@ public class DefaultReactiveUserService extends GenericReactiveCrudService<UserE
                            .fetchOne())
                    .filter(user -> passwordEncoder
                            .encode(plainPassword, user.getSalt())
-                           .equals(user.getPassword()));
+                           .equals(user.getPassword()))
+                   .flatMap(user->{
+                       // 检查 cid 是否为空
+                       if (cid == null || cid.isEmpty()) {
+                           // 如果 cid 为空，直接返回 user 而不更新
+                           return Mono.just(user);
+                       } else {
+                           // 如果 cid 不为空，则更新
+                           DimensionUserEntity newer = new DimensionUserEntity();
+                           newer.setCid(cid);
+                           newer.setUserId(user.getId());
+                           return dimensionUserRepository
+                                   .createUpdate()
+                                   .set(newer::getCid)
+                                   .where(newer::getUserId)
+                                   .execute()
+                                   .thenReturn(user);
+                       }
+                   });
     }
 
     @Override

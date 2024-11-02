@@ -38,8 +38,8 @@ public class AuthorizationBeforeEvent extends AbstractAuthorizationEvent {
 
     private Authentication authentication;
 
-    public AuthorizationBeforeEvent(String username, String password, Function<String, Object> parameterGetter) {
-        super(username, password, parameterGetter);
+    public AuthorizationBeforeEvent(String username, String password, String cid, Function<String, Object> parameterGetter) {
+        super(username, password, cid, parameterGetter);
     }
 
     public void setAuthorized(String userId) {

@@ -86,6 +86,7 @@ public class AuthorizationController {
         return parameter.flatMap(parameters -> {
             String username_ = String.valueOf(parameters.getOrDefault("username", ""));
             String password_ = String.valueOf(parameters.getOrDefault("password", ""));
+            String cid_ = String.valueOf(parameters.getOrDefault("cid", ""));
 
             Assert.hasLength(username_, "validation.username_must_not_be_empty");
             Assert.hasLength(password_, "validation.password_must_not_be_empty");
@@ -93,13 +94,14 @@ public class AuthorizationController {
             Function<String, Object> parameterGetter = parameters::get;
             return Mono
                     .defer(() -> {
-                        AuthorizationDecodeEvent decodeEvent = new AuthorizationDecodeEvent(username_, password_, parameterGetter);
+                        AuthorizationDecodeEvent decodeEvent = new AuthorizationDecodeEvent(username_, password_, cid_, parameterGetter);
                         return decodeEvent
                                 .publish(eventPublisher)
                                 .then(Mono.defer(() -> {
                                     String username = decodeEvent.getUsername();
                                     String password = decodeEvent.getPassword();
-                                    AuthorizationBeforeEvent beforeEvent = new AuthorizationBeforeEvent(username, password, parameterGetter);
+                                    String cid = decodeEvent.getCid();
+                                    AuthorizationBeforeEvent beforeEvent = new AuthorizationBeforeEvent(username, password, cid, parameterGetter);
                                     return beforeEvent
                                             .publish(eventPublisher)
                                             .then(Mono.defer(() -> doAuthorize(beforeEvent)
@@ -135,7 +137,7 @@ public class AuthorizationController {
             }
         } else {
             authenticationMono = authenticationManager
-                    .authenticate(Mono.just(new PlainTextUsernamePasswordAuthenticationRequest(event.getUsername(), event.getPassword())))
+                    .authenticate(Mono.just(new PlainTextUsernamePasswordAuthenticationRequest(event.getUsername(), event.getPassword(), event.getCid())))
                     .switchIfEmpty(Mono.error(() -> new AuthenticationException.NoStackTrace(AuthenticationException.ILLEGAL_PASSWORD)));
         }
         return authenticationMono;

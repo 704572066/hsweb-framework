@@ -2,6 +2,7 @@ package org.hswebframework.web.system.authorization.defaults.service;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.hswebframework.ezorm.rdb.mapping.ReactiveRepository;
+import org.hswebframework.web.api.crud.entity.TransactionManagers;
 import org.hswebframework.web.authorization.Dimension;
 import org.hswebframework.web.authorization.DimensionProvider;
 import org.hswebframework.web.authorization.DimensionType;
@@ -11,20 +12,26 @@ import org.hswebframework.web.crud.events.EntityDeletedEvent;
 import org.hswebframework.web.crud.events.EntityModifyEvent;
 import org.hswebframework.web.crud.events.EntitySavedEvent;
 import org.hswebframework.web.crud.service.GenericReactiveTreeSupportCrudService;
+import org.hswebframework.web.exception.NotFoundException;
 import org.hswebframework.web.id.IDGenerator;
 import org.hswebframework.web.system.authorization.api.entity.DimensionEntity;
 import org.hswebframework.web.system.authorization.api.entity.DimensionTypeEntity;
 import org.hswebframework.web.system.authorization.api.entity.DimensionUserEntity;
+import org.hswebframework.web.system.authorization.api.entity.UserEntity;
 import org.hswebframework.web.system.authorization.api.event.ClearUserAuthorizationCacheEvent;
 import org.hswebframework.web.system.authorization.api.event.DimensionDeletedEvent;
+import org.hswebframework.web.system.authorization.api.event.UserModifiedEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import javax.validation.ValidationException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -120,6 +127,27 @@ public class DefaultDimensionService
                 .where(DimensionUserEntity::getDimensionId, dimensionId)
                 .fetch()
                 .map(DimensionUserEntity::getUserId);
+    }
+
+//    @Override
+    @Transactional(rollbackFor = Exception.class, transactionManager = TransactionManagers.reactiveTransactionManager)
+    public Mono<String> updateAppCid(String userId, String cid) {
+        return findById(userId)
+//                .switchIfEmpty(Mono.just(userId))
+                .flatMap(old -> {
+//                    String encodePwd = passwordEncoder.encode(newPassword, old.getSalt());
+//
+//                    boolean passwordChanged = !Objects.equals(encodePwd, old.getPassword());
+                    DimensionUserEntity newer = old.copyTo(new DimensionUserEntity());
+                    newer.setCid(cid);
+                    return dimensionUserRepository
+                            .createUpdate()
+                            .set(newer::getCid)
+                            .where(newer::getId)
+                            .execute().thenReturn(userId);
+                })
+                .switchIfEmpty(Mono.just(userId)); // 如果找不到用户，直接返回userId
+//                .map(i -> i > 0);
     }
 
     @EventListener
