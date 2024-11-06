@@ -129,6 +129,20 @@ public class DefaultDimensionService
                 .map(DimensionUserEntity::getUserId);
     }
 
+    public Mono<List<String>> getCidIdByDimensionId(String dimensionId) {
+        return dimensionUserRepository
+                .createQuery()
+                .select(DimensionUserEntity::getCid)
+                .where(DimensionUserEntity::getDimensionId, dimensionId)
+                .fetch()
+                .map(DimensionUserEntity::getCid) // Map each entity to its cid
+                .filter(cid -> cid != null)
+                .collectList();
+//                .block();
+//                .map(DimensionUserEntity::getCid);
+    }
+
+
 //    @Override
     @Transactional(rollbackFor = Exception.class, transactionManager = TransactionManagers.reactiveTransactionManager)
     public Mono<String> updateAppCid(String userId, String cid) {
