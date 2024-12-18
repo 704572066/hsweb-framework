@@ -21,10 +21,13 @@ public class PlainTextUsernamePasswordAuthenticationRequest implements Authentic
 
     private String cid;
 
+    private String code;
+
     // 自定义构造函数，设置 cid 默认值为空字符串
     public PlainTextUsernamePasswordAuthenticationRequest(String username, String password) {
         this.username = username;
         this.password = password;
         this.cid = "";  // 默认值
+        this.code = ""; //默认值
     }
 }

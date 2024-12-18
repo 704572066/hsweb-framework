@@ -30,8 +30,8 @@ public class AuthorizationDecodeEvent extends AbstractAuthorizationEvent {
 
     private static final long serialVersionUID = 5418501934490174251L;
 
-    public AuthorizationDecodeEvent(String username, String password, String cid, Function<String, Object> parameterGetter) {
-        super(username, password, cid, parameterGetter);
+    public AuthorizationDecodeEvent(String username, String password, String cid, String code, Function<String, Object> parameterGetter) {
+        super(username, password, cid, code, parameterGetter);
     }
 
     public void setUsername(String username) {
@@ -44,6 +44,10 @@ public class AuthorizationDecodeEvent extends AbstractAuthorizationEvent {
 
     public void setCid(String cid) {
         super.cid = cid;
+    }
+
+    public void setCode(String code) {
+        super.code = code;
     }
 
 }

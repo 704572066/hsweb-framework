@@ -1,5 +1,6 @@
 package org.hswebframework.web.system.authorization.defaults.service;
 
+import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.hswebframework.ezorm.core.param.QueryParam;
@@ -21,15 +22,16 @@ import org.hswebframework.web.system.authorization.api.service.reactive.Reactive
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
+import org.springframework.web.reactive.function.client.WebClient;
 import javax.validation.ValidationException;
 import java.util.Objects;
-
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 public class DefaultReactiveUserService extends GenericReactiveCrudService<UserEntity, String> implements ReactiveUserService {
 
     @Autowired
@@ -53,6 +55,8 @@ public class DefaultReactiveUserService extends GenericReactiveCrudService<UserE
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    private final WebClient webClient = WebClient.create();
 
     @Override
     public Mono<UserEntity> newUserInstance() {
@@ -156,7 +160,7 @@ public class DefaultReactiveUserService extends GenericReactiveCrudService<UserE
 
     @Override
     @Transactional(transactionManager = TransactionManagers.reactiveTransactionManager)
-    public Mono<UserEntity> findByUsernameAndPassword(String username, String plainPassword, String cid) {
+    public Mono<UserEntity> findByUsernameAndPassword(String username, String plainPassword, String cid, String code) {
         return Mono.justOrEmpty(username)
                    .flatMap(_name -> repository
                            .createQuery()
@@ -167,10 +171,11 @@ public class DefaultReactiveUserService extends GenericReactiveCrudService<UserE
                            .equals(user.getPassword()))
                    .flatMap(user->{
                        // 检查 cid 是否为空
-                       if (cid == null || cid.isEmpty()) {
+                       if ((cid == "null" || cid == "")&&(code == "null" || code == "")) {
                            // 如果 cid 为空，直接返回 user 而不更新
                            return Mono.just(user);
-                       } else {
+                       } else if (cid != "null" && cid != "") {
+//                           log.warn("cid----88"+cid);
                            // 如果 cid 不为空，则更新
                            DimensionUserEntity newer = new DimensionUserEntity();
                            newer.setCid(cid);
@@ -181,6 +186,37 @@ public class DefaultReactiveUserService extends GenericReactiveCrudService<UserE
                                    .where(newer::getUserId)
                                    .execute()
                                    .thenReturn(user);
+                       } else {
+                           log.warn("code: "+code);
+                           String token_url = "https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=APPSECRET&js_code=CODE&grant_type=authorization_code";
+                           String url = token_url.replace("APPID", "wxe861fc6383450e16").replace("APPSECRET", "d0ff5a111437aa331d3e3f9132fe7fe7").replace("CODE", code);
+                           // 使用 WebClient 发起异步 HTTP GET 请求
+                           return webClient.get()
+                                   .uri(url)
+                                   .accept(MediaType.APPLICATION_JSON)  // Explicitly expect JSON
+                                   .retrieve()
+                                   .bodyToMono(String.class) // 将响应体解析为 JSONObject
+                                   .flatMap(obj -> {
+                                       log.warn("json: "+obj);
+                                       JSONObject jsonResponse = JSONObject.parseObject(obj);
+                                       String unionid = jsonResponse.getString("unionid"); // 提取 unionid
+                                       if (unionid != null && unionid != "") {
+//                                           return Mono.just(id); // 正常返回 unionid
+                                           DimensionUserEntity newer = new DimensionUserEntity();
+                                           newer.setUnionid(unionid);
+                                           newer.setUserId(user.getId());
+                                           return dimensionUserRepository
+                                                   .createUpdate()
+                                                   .set(newer::getUnionid)
+                                                   .where(newer::getUserId)
+                                                   .execute()
+                                                   .thenReturn(user);
+                                       } else {
+                                           return Mono.just(user);
+//                                           return Mono.error(new RuntimeException("unionid 不存在")); // 返回错误
+                                       }
+                                   });
+
                        }
                    });
     }

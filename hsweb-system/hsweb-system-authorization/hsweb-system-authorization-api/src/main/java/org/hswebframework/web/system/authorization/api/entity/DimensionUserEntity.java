@@ -86,6 +86,11 @@ public class DimensionUserEntity extends GenericEntity<String> {
     @Schema(description = "设备cid")
     private String cid;
 
+    @Column(name = "unionid")
+    @Comment("小程序unionid")
+    @Schema(description = "小程序unionid")
+    private String unionid;
+
     public void generateId() {
         if (StringUtils.isEmpty(getId())) {
             String id = DigestUtils

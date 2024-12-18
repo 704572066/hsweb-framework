@@ -82,7 +82,7 @@ public class DefaultReactiveUserServiceTest {
                    .expectNext(true)
                    .verifyComplete();
 
-        userService.findByUsernameAndPassword("admin", "admin", "123")
+        userService.findByUsernameAndPassword("admin", "admin", "123", "456")
                    .as(StepVerifier::create)
                    .expectNextCount(1)
                    .verifyComplete();

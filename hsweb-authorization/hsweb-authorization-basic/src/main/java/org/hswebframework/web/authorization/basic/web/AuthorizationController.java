@@ -44,10 +44,11 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 import java.util.function.Function;
-
+import lombok.extern.slf4j.Slf4j;
 /**
  * @author zhouhao
  */
+@Slf4j
 @RestController
 @RequestMapping("${hsweb.web.mappings.authorize:authorize}")
 @Tag(name = "授权接口")
@@ -87,21 +88,22 @@ public class AuthorizationController {
             String username_ = String.valueOf(parameters.getOrDefault("username", ""));
             String password_ = String.valueOf(parameters.getOrDefault("password", ""));
             String cid_ = String.valueOf(parameters.getOrDefault("cid", ""));
-
+            String code_ = String.valueOf(parameters.getOrDefault("code", ""));
             Assert.hasLength(username_, "validation.username_must_not_be_empty");
             Assert.hasLength(password_, "validation.password_must_not_be_empty");
 
             Function<String, Object> parameterGetter = parameters::get;
             return Mono
                     .defer(() -> {
-                        AuthorizationDecodeEvent decodeEvent = new AuthorizationDecodeEvent(username_, password_, cid_, parameterGetter);
+                        AuthorizationDecodeEvent decodeEvent = new AuthorizationDecodeEvent(username_, password_, cid_, code_, parameterGetter);
                         return decodeEvent
                                 .publish(eventPublisher)
                                 .then(Mono.defer(() -> {
                                     String username = decodeEvent.getUsername();
                                     String password = decodeEvent.getPassword();
                                     String cid = decodeEvent.getCid();
-                                    AuthorizationBeforeEvent beforeEvent = new AuthorizationBeforeEvent(username, password, cid, parameterGetter);
+                                    String code = decodeEvent.getCode();
+                                    AuthorizationBeforeEvent beforeEvent = new AuthorizationBeforeEvent(username, password, cid, code, parameterGetter);
                                     return beforeEvent
                                             .publish(eventPublisher)
                                             .then(Mono.defer(() -> doAuthorize(beforeEvent)
@@ -137,7 +139,7 @@ public class AuthorizationController {
             }
         } else {
             authenticationMono = authenticationManager
-                    .authenticate(Mono.just(new PlainTextUsernamePasswordAuthenticationRequest(event.getUsername(), event.getPassword(), event.getCid())))
+                    .authenticate(Mono.just(new PlainTextUsernamePasswordAuthenticationRequest(event.getUsername(), event.getPassword(), event.getCid(), event.getCode())))
                     .switchIfEmpty(Mono.error(() -> new AuthenticationException.NoStackTrace(AuthenticationException.ILLEGAL_PASSWORD)));
         }
         return authenticationMono;

@@ -129,7 +129,7 @@ public class DefaultDimensionService
                 .map(DimensionUserEntity::getUserId);
     }
 
-    public Mono<List<String>> getCidIdByDimensionId(String dimensionId) {
+    public Mono<List<String>> getCidByDimensionId(String dimensionId) {
         return dimensionUserRepository
                 .createQuery()
                 .select(DimensionUserEntity::getCid)
@@ -138,6 +138,17 @@ public class DefaultDimensionService
                 .map(DimensionUserEntity::getCid) // Map each entity to its cid
                 .filter(cid -> cid != null)
                 .collectList();
+//                .block();
+//                .map(DimensionUserEntity::getCid);
+    }
+
+    public Mono<DimensionUserEntity> getByDimensionId(String dimensionId) {
+        return dimensionUserRepository
+                .createQuery()
+                .where(DimensionUserEntity::getDimensionId, dimensionId)
+                .fetchOne();
+//                .defaultIfEmpty(new DimensionUserEntity());  // Provide a default entity
+//                .collectList();
 //                .block();
 //                .map(DimensionUserEntity::getCid);
     }
