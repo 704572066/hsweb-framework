@@ -153,6 +153,14 @@ public class DefaultDimensionService
 //                .map(DimensionUserEntity::getCid);
     }
 
+    public Mono<List<DimensionUserEntity>> getDimensionUserListByDimensionId(String dimensionId) {
+        return dimensionUserRepository
+                .createQuery()
+                .where(DimensionUserEntity::getDimensionId, dimensionId)
+                .fetch()
+                .collectList();
+    }
+
 
 //    @Override
     @Transactional(rollbackFor = Exception.class, transactionManager = TransactionManagers.reactiveTransactionManager)
